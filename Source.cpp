@@ -3,7 +3,7 @@
 #include <string>
 using namespace std;
 
-int str_l(string l) {
+int str_l(string l) {//O(n)
     int i = 0;
     while (l[i] != '\0') {
         i++;
@@ -11,7 +11,7 @@ int str_l(string l) {
     return i;
 }
 
-int decimal_(string i, int b = 2) {
+int decimal_(string i, int b = 2) {//O(n)
     int power = 1, num = 0;
     for (int j = str_l(i) - 1; j >= 0; j--) {
         num += power * (i[j] - '0');
@@ -24,13 +24,77 @@ class games_played {
     string game_id;
     float hours;
     int achievements;
+public:
+    games_played() {
+        game_id = "";
+        hours = 0.0;
+        achievements = 0;
+    }
+    games_played(string i,float h,int a):game_id(i),hours(h),achievements(a){}
+    string id() {
+        return game_id;
+    }
+
 };
 
 class player {
     string playerID, name, PhoneNO, email, password;
-    games_played g;
+   // games_played* g;
+    player* left, * right;
+public:
+    player() {
+        playerID = name = PhoneNO = email = password="";
+        left = right = nullptr;
+        //g = nullptr;
+    }
+    player(string id,string n,string no,string em,string pass):
+        playerID(id),name(n),PhoneNO(no),email(em),password(pass){
+        left = right = nullptr;
+    }
+    player*& getleft() {
+        return left;
+    }
+    player*& getright() {
+        return right;
+    }
+    string get_id() {
+        return playerID;
+    }
 };
-
+class Tree_player {
+    player* root;
+public:
+    Tree_player() {
+        root = nullptr;
+    }
+    player*& getroot() {
+        return root;
+    }
+    void insert(player*&root,player*s) {//O(logn)
+        if (root == nullptr) {
+            root = s;
+            return ;
+        }
+        else {
+            if (decimal_(root->get_id()) > decimal_(s->get_id())) {
+                insert(root->getleft(), s);
+            }
+            else if (decimal_(root->get_id()) < decimal_(s->get_id())) {
+                insert(root->getright(), s);
+            }
+        }
+    }
+    void postorderTraversal(player* root) {
+        if (root == nullptr) {
+            return;
+        }
+        else {
+            postorderTraversal(root->getleft());
+            postorderTraversal(root->getright());
+            cout << root->get_id() << "\n";
+        }
+    }
+};
 class games {
     string gameID, name, developer, publisher;
     float size;
@@ -45,7 +109,9 @@ public:
     }
 
     games(string id, string nam, string dev, string pub, float s, int d)
-        : gameID(id), name(nam), developer(dev), publisher(pub), size(s), down(d), left(nullptr), right(nullptr) {}
+        : gameID(id), name(nam), developer(dev), publisher(pub), size(s), down(d){
+        left = right = nullptr;
+    }
 
     string get_id() {
         return gameID;
@@ -71,7 +137,7 @@ public:
         return root;
     }
 
-    void insert(games*& root, games* s) {
+    void insert(games*& root, games* s) {//O(n)
         if (root == nullptr) {
             root = s;
             return;
@@ -99,7 +165,7 @@ void load_game(string s,Tree_game *ga) {
     string line;
 
     // Read and output each line
-    while (getline(file, line)) {
+    while (getline(file, line)) {//O(n^2)
         string id = "", n = "", d = "", p = "";
         float si = 0.0;
         int dow = 0, i = 0;
@@ -146,10 +212,62 @@ void load_game(string s,Tree_game *ga) {
     file.close();  // Close the file
 }
 int main() {
-    string s = "C:\\Users\\user\\OneDrive\\Desktop\\Games.txt";  // games file path
-    Tree_game ga;
-
+    /*Tree_game ga;
     load_game(s, &ga);
-    ga.postorderTraversal(ga.get_root());
+    ga.postorderTraversal(ga.get_root());*/
+    Tree_player pat;
+    string s = "C:\\Users\\user\\OneDrive\\Desktop\\Games.txt";  // games file path
+    string p = "C:\\Users\\user\\OneDrive\\Desktop\\Players.txt";
+    ifstream file(p);
+    string line;
+    while (getline(file, line)) { // O(n^2)
+        string id = "", name = "", phone = "", email = "", pass = "";
+        int i = 0;
+        while (line[i] != ',' && i < str_l(line)) {
+            id += line[i++];
+        }
+        i++;
+        while (line[i] != ',' && i < str_l(line)) {
+            name += line[i++];
+        }
+        i++;
+        while (line[i] != ',' && i < str_l(line)) {
+            phone += line[i++];
+        }
+        i++;
+        while (line[i] != ',' && i < str_l(line)) {
+            email += line[i++];
+        }
+        i++;
+        while (line[i] != ',' && i < str_l(line)) {
+            pass += line[i++];
+        }
+        i++;
+        player* tp = new player(id, name, phone, email, pass);
+        pat.insert(pat.getroot(), tp);
+        games_played* temp = new games_played[100];;
+        int j = 0;
+        while (i < line.size()) {
+            string gd = "", gh = "", ga = "";
+            while (line[i] != ',' && i < line.size()) {
+                gd += line[i++];
+            }
+            i++;
+            while (line[i] != ',' && i < line.size()) {
+                gh += line[i++];
+            }
+            i++;
+            while (line[i] != ',' && i < line.size()) {
+                ga += line[i++];
+            }
+            i++;
+            temp[j] = games_played(gd, stof(gh), stoi(ga));
+            j++;
+        }
+        player* tp = new player(id, name, phone, email, pass);
+        pat.insert(pat.getroot(), tp);
+    }
+    pat.postorderTraversal(pat.getroot());
+    file.close();
     return 0;
 }
