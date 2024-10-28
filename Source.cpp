@@ -24,28 +24,75 @@ class games_played {
     string game_id;
     float hours;
     int achievements;
+    games_played* left;
+    games_played* right;
 public:
     games_played() {
         game_id = "";
         hours = 0.0;
         achievements = 0;
+        left = right = nullptr;
     }
-    games_played(string i,float h,int a):game_id(i),hours(h),achievements(a){}
+    games_played(string i, float h, int a) :game_id(i), hours(h), achievements(a) {}
     string id() {
         return game_id;
     }
-
+    string get_id() {
+        return game_id;
+    }
+    games_played*& getleft() {
+        return left;
+    }
+    games_played*& getright() {
+        return right;
+    }
 };
-
+class games_playedT {
+    games_played* root;
+public:
+    games_playedT() {
+        root = nullptr;
+    }
+    games_played*& get_root() {
+        return root;
+    }
+    void postorderTraversal(games_played* root) {
+        if (root == nullptr) {
+            return;
+        }
+        else {
+            postorderTraversal(root->getleft());
+            postorderTraversal(root->getright());
+            cout << root->get_id() << "\n";
+        }
+    }
+    void insert(games_played*& root, games_played* s) {//O(logn)
+        if (root == nullptr) {
+            root = s;
+            return;
+        }
+        else {
+            if (decimal_(root->get_id()) > decimal_(s->get_id())) {
+                insert(root->getleft(), s);
+            }
+            else if (decimal_(root->get_id()) < decimal_(s->get_id())) {
+                insert(root->getright(), s);
+            }
+        }
+    }
+};
 class player {
     string playerID, name, PhoneNO, email, password;
-   // games_played* g;
+    games_playedT g;
     player* left, * right;
 public:
     player() {
         playerID = name = PhoneNO = email = password="";
         left = right = nullptr;
-        //g = nullptr;
+        //g.get_root() = nullptr;
+    }
+    games_playedT& get_played_games() {
+        return g;
     }
     player(string id,string n,string no,string em,string pass):
         playerID(id),name(n),PhoneNO(no),email(em),password(pass){
@@ -214,6 +261,7 @@ void load_game(string s,Tree_game *ga) {
 int main() {
     /*Tree_game ga;
     load_game(s, &ga);
+
     ga.postorderTraversal(ga.get_root());*/
     Tree_player pat;
     string s = "C:\\Users\\user\\OneDrive\\Desktop\\Games.txt";  // games file path
@@ -243,10 +291,8 @@ int main() {
             pass += line[i++];
         }
         i++;
-        player* tp = new player(id, name, phone, email, pass);
-        pat.insert(pat.getroot(), tp);
-        games_played* temp = new games_played[100];;
         int j = 0;
+        player* tp = new player(id, name, phone, email, pass);
         while (i < line.size()) {
             string gd = "", gh = "", ga = "";
             while (line[i] != ',' && i < line.size()) {
@@ -261,10 +307,9 @@ int main() {
                 ga += line[i++];
             }
             i++;
-            temp[j] = games_played(gd, stof(gh), stoi(ga));
-            j++;
+            games_played* tempg = new games_played(gd, stof(gh), str_l(ga));
+            tp->get_played_games().insert(tp->get_played_games().get_root(), tempg);
         }
-        player* tp = new player(id, name, phone, email, pass);
         pat.insert(pat.getroot(), tp);
     }
     pat.postorderTraversal(pat.getroot());
