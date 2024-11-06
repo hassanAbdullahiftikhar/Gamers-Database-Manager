@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include"queue.h"
 using namespace std;
 
 int str_l(string l) {//O(n)
@@ -56,6 +57,16 @@ public:
     games_playedT() {
         root = nullptr;
     }
+    void empty(games_played* root) {
+        if (root == nullptr) {
+            return;
+        }
+        else {
+            empty(root->getleft());
+            empty(root->getright());
+            delete root;
+        }
+    }
     games_played*& get_root() {
         return root;
     }
@@ -66,7 +77,7 @@ public:
         }
         else {
             if (decimal_(gid) < decimal_(root->get_id())) {
-                gamesp_search(gid,root->getleft());
+                gamesp_search(gid, root->getleft());
             }
             else if (decimal_(gid) > decimal_(root->get_id())) {
                 gamesp_search(gid, root->getright());
@@ -84,8 +95,8 @@ public:
         else {
             postorderTraversal(root->getleft());
             postorderTraversal(root->getright());
-            cout <<"Game id:" << root->get_id() << " Hours:"
-                <<root->get_h()<<" Achievements:"<<root->get_ach()<<"\n";
+            cout << "Game id:" << root->get_id() << " Hours:"
+                << root->get_h() << " Achievements:" << root->get_ach() << "\n";
         }
     }
     void insert(games_played*& root, games_played* s) {//O(logn)
@@ -109,15 +120,15 @@ class player {
     player* left, * right;
 public:
     player() {
-        playerID = name = PhoneNO = email = password="";
+        playerID = name = PhoneNO = email = password = "";
         left = right = nullptr;
         //g.get_root() = nullptr;
     }
     games_playedT& get_played_games() {
         return g;
     }
-    player(string id,string n,string no,string em,string pass):
-        playerID(id),name(n),PhoneNO(no),email(em),password(pass){
+    player(string id, string n, string no, string em, string pass) :
+        playerID(id), name(n), PhoneNO(no), email(em), password(pass) {
         left = right = nullptr;
     }
     player*& getleft() {
@@ -126,6 +137,7 @@ public:
     player*& getright() {
         return right;
     }
+
     string get_id() {
         return playerID;
     }
@@ -137,10 +149,54 @@ public:
 };
 class Tree_player {
     player* root;
+    Queue<player>q;
+
+    player*& min(player* r) {
+        while (r != nullptr && r->getleft() != nullptr) {
+            r = r->getleft();
+        }
+        return r;
+    }
 public:
     Tree_player() {
         root = nullptr;
     }
+    void breadth_first(player* root, int l) {
+        if (root == nullptr) {
+            cout << "Tree is empty!";
+            return;
+        }
+
+        Queue<player> q;
+        q.enqueue(root); 
+        int cl = 0;
+        while (!q.is_empty() && cl < l) {
+            int level_size = 0;
+            Queue<player> tempQueue;
+            while (!q.is_empty()) {
+                player* current = q.top();  
+                q.dequeue();
+                cout << current->get_id() << " ";
+                if (current->getleft() != nullptr) {
+                    tempQueue.enqueue(current->getleft());
+                    level_size++;
+                }
+                if (current->getright() != nullptr) {
+                    tempQueue.enqueue(current->getright());
+                    level_size++;
+                }
+            }
+            cout << endl;
+            while (!tempQueue.is_empty()) {
+                player* nextNode = tempQueue.top();
+                tempQueue.dequeue();
+                q.enqueue(nextNode);  
+            }
+            cl++;
+        }
+    }
+
+
     player*& getroot() {
         return root;
     }
@@ -163,6 +219,62 @@ public:
                 return;
             }
         }
+    }
+    void save_games(games_played* gameNode, string& s) {
+        if (gameNode == nullptr) {
+            return;
+        }
+        s += gameNode->get_id() + "," + to_string(gameNode->get_h())
+            + "," + to_string(gameNode->get_ach());
+        save_games(gameNode->getleft(), s);
+        save_games(gameNode->getright(), s);
+    }
+    string save_(player* root, string& s) {
+        if (root == nullptr) {
+            return s;
+        }
+        else {
+            s += root->get_dets() + "\n";
+            games_playedT& gamesTree = root->get_played_games();
+            save_games(gamesTree.get_root(), s); 
+            save_(root->getleft(), s);
+            save_(root->getright(), s);
+        }
+        return s;
+    }
+
+    player* delete_p(player*root,string id) {
+        if (root == nullptr) {
+            return nullptr;
+        }
+        if (decimal_(root->get_id()) > decimal_(id)) {
+            root->getleft() = delete_p(root->getleft(), id);
+        }
+        else if (decimal_(root->get_id()) < decimal_(id)) {
+            root->getright() = delete_p(root->getright(), id);
+        }
+        else {
+            if (root->getright() == nullptr && root->getleft() == nullptr) {
+                delete root;
+                return nullptr;
+            }
+            else if (root->getright() == nullptr) {
+                player* temp = root->getleft();
+                delete root;
+                return temp;
+            }
+            else if (root->getleft() == nullptr) {
+                player* temp = root->getright();
+                delete root;
+                return temp;
+            }
+            else {
+                player* temp = min(root->getright());
+                *root = *temp;
+                root->getright() = delete_p(root->getright(), temp->get_id());
+            }
+        }
+        return root;
     }
     void search_player(string id,player*& root) {
         if (root == nullptr) {
@@ -244,7 +356,10 @@ public:
         : gameID(id), name(nam), developer(dev), publisher(pub), size(s), down(d){
         left = right = nullptr;
     }
-
+    string get_dets() {
+        return gameID + "," + name + "," + developer + "," + publisher + "," + to_string(size) + ","
+            + to_string(down);
+    }
     string get_id() {
         return gameID;
     }
@@ -260,9 +375,59 @@ public:
 
 class Tree_game {
     games* root;
+    games*& min(games* r) {
+        while (r != nullptr && r->gleft() != nullptr) {
+            r = r->gleft();
+        }
+        return r;
+    }
 public:
+    string save_(games* root, string& s) {
+        if (root == nullptr) {
+            return s;
+        }
+        else {
+            s += root->get_dets() + "\n";
+            save_(root->gleft(), s);
+            save_(root->gright(), s);
+        }
+        return s;
+    }
     Tree_game() {
         root = nullptr;
+    }
+    games* delete_p(games* root, string id) {
+        if (root == nullptr) {
+            return nullptr;
+        }
+        if (decimal_(root->get_id()) > decimal_(id)) {
+            root->gleft() = delete_p(root->gleft(), id);
+        }
+        else if (decimal_(root->get_id()) < decimal_(id)) {
+            root->gright() = delete_p(root->gright(), id);
+        }
+        else {
+            if (root->gright() == nullptr && root->gleft() == nullptr) {
+                delete root;
+                return nullptr;
+            }
+            else if (root->gright() == nullptr) {
+                games* temp = root->gleft();
+                delete root;
+                return temp;
+            }
+            else if (root->gleft() == nullptr) {
+                games* temp = root->gright();
+                delete root;
+                return temp;
+            }
+            else {
+                games* temp = min(root->gright());
+                *root = *temp;
+                root->gright() = delete_p(root->gright(), temp->get_id());
+            }
+        }
+        return root;
     }
     void pretorderTraversal(games* root,string id) {
         if (root == nullptr) {
@@ -323,6 +488,18 @@ public:
         }
     }
 };
+
+void save_data(string player,string game, Tree_player& p,Tree_game&g ,string s = "") {
+    ofstream outFile(player);
+    p.save_(p.getroot(), s);
+    outFile << s;
+    outFile.close();
+    s = "";
+    ofstream outFile2(game);
+    g.save_(g.get_root(), s);
+    outFile2 << s;
+    outFile2.close();
+}
 void load_player(string p,Tree_player &pat,int s) {
     srand(time(0));
     ifstream file(p);
@@ -439,14 +616,13 @@ int main() {
     cout << "Loading players\n";
     load_player(p, pat, seed);
     string n, pt;
-    pat.postorderTraversal(pat.getroot());
     cout << "Insert player";
     while (true) {
         int ch;
         cout << "Enter 1 for game menu,2 for player,0 for exit:";
         cin >> ch;
         if (ch == 2) {
-            cout << "Enter 1 for insertion,2 for retrieval,3 for details\n";
+            cout << "Enter 1 for insertion,2 for retrieval,3 for details,4 for has played,5 for deletion,6 for level order tarversal\n";
             cin >> ch;
             if (ch == 1) {
                 string id, name, phon, emai, pass;
@@ -491,12 +667,30 @@ int main() {
                 cin >> id;
                 pat.display_dets(id, pat.getroot());
             }
+            else if (ch == 4) {
+                cout << "Enter player id\n";
+                cin >> n;
+                cout << "Enter game id\n";
+                cin >> pt;
+                pat.search_p(n, pt, pat.getroot());
+            }
+            else if (ch==5) {
+                cout << "Enter player id\n";
+                cin >> n;
+                pat.delete_p(pat.getroot(), n);
+            }
+            else if (ch == 6) {
+                int n;
+                cout << "Enter layers\n";
+                cin >> n;
+                pat.breadth_first(pat.getroot(),n);
+            }
         }
         else if(ch==0) {
             break;
         }
         else {
-            cout << "Enter 1 for insertion,2 for retrieval\n";
+            cout << "Enter 1 for insertion,2 for retrieval,3 for deletion\n";
             cin >> ch;
             if (ch == 1) {
                 string id, name, dev, pub;
@@ -517,7 +711,7 @@ int main() {
                 games* temp = new games(id, name, dev, pub, size, down);
                 ga.insert(ga.get_root(), temp);
             }
-            else {
+            else if(ch==2){
                 string id,ch;
                 cout << "enter id:\n";
                 cin >> id;
@@ -528,8 +722,15 @@ int main() {
                     ga.pretorderTraversal(ga.get_root(), id);
                 }
             }
+            else if (ch == 3) {
+                string id;
+                cout << "enter id:\n";
+                cin >> id;
+                ga.delete_p(ga.get_root(), id);
+            }
         }
     }
+    save_data("dumy.txt","dummy2.txt", pat,ga);
     //ga.postorderTraversal(ga.get_root());
    /* cout << "Enter player id\n";
     cin >> n;
