@@ -1,7 +1,6 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include<ctime>
 using namespace std;
 
 int str_l(string l) {//O(n)
@@ -165,6 +164,25 @@ public:
             }
         }
     }
+    void search_player(string id,player*& root) {
+        if (root == nullptr) {
+            cout << "Player not present\n";
+            return;
+        }
+        else {
+            if (decimal_(root->get_id()) > decimal_(id)) {
+                search_player(id, root->getleft());
+            }
+            else if (decimal_(root->get_id()) < decimal_(id)) {
+                search_player(id, root->getright());
+            }
+            else if (decimal_(root->get_id()) == decimal_(id)) {
+                cout << "Player found\n";
+                cout << root->get_id() << "\n";
+                return;
+            }
+        }
+    }
     void search_p(string id, string game_id, player*&root) {
         if (root == nullptr) {
             cout << "Player not present\n";
@@ -246,11 +264,42 @@ public:
     Tree_game() {
         root = nullptr;
     }
-
+    void pretorderTraversal(games* root,string id) {
+        if (root == nullptr) {
+            cout << "Game not found!!";
+            return;
+        }
+        else if(root->get_id()==id) {
+            cout << root->get_id() << "\n";
+            return;
+        }
+        else {
+            cout << root->get_id() << "\n";
+            postorderTraversal(root->gleft());
+            postorderTraversal(root->gright());
+        }
+    }
     games*& get_root() {
         return root;
     }
-
+    void search_games(games*& root,string id) {
+        if (root == nullptr) {
+            cout << "Game not found!!";
+            return;
+        }
+        else {
+            if (decimal_(id) < decimal_(root->get_id())) {
+                search_games( root->gleft(),id);
+            }
+            else if (decimal_(id) > decimal_(root->get_id())) {
+                search_games(root->gright(), id);
+            }
+            else if (decimal_(id) == decimal_(root->get_id())) {
+                cout <<"Game present!!";
+                return;
+            }
+        }
+    }
     void insert(games*& root, games* s) {//O(n)
         if (root == nullptr) {
             root = s;
@@ -384,12 +433,104 @@ int main() {
     string p = "C:\\Users\\user\\OneDrive\\Desktop\\Players.txt";
     Tree_player pat;
     Tree_game ga;
+    cout << "Loading games\n";
     load_game(s, &ga);
-    //ga.postorderTraversal(ga.get_root());
     int seed = 570;
-    load_player(p, pat,seed);
+    cout << "Loading players\n";
+    load_player(p, pat, seed);
     string n, pt;
     pat.postorderTraversal(pat.getroot());
+    cout << "Insert player";
+    while (true) {
+        int ch;
+        cout << "Enter 1 for game menu,2 for player,0 for exit:";
+        cin >> ch;
+        if (ch == 2) {
+            cout << "Enter 1 for insertion,2 for retrieval,3 for details\n";
+            cin >> ch;
+            if (ch == 1) {
+                string id, name, phon, emai, pass;
+                cout << "enter id:\n";
+                cin >> id;
+                cout << "enter name:\n";
+                cin >> name;
+                cout << "enter phone:\n";
+                cin >> phon;
+                cout << "enter email:\n";
+                cin >> name;
+                cout << "enter pass:\n";
+                cin >> pass;
+                player* t = new player(id, name, phon, emai, pass);
+                int i = 0;
+                cout << "Enter no of games\n";
+                cin >> i;
+                for (int j = 0; j < i; j++) {
+                    string gid;
+                    float hrs;
+                    int ach;
+                    cout << "enter gid:\n";
+                    cin >> gid;
+                    cout << "enter hours:\n";
+                    cin >> hrs;
+                    cout << "enter achievements:\n";
+                    cin >> ach;
+                    games_played* te = new games_played(gid, hrs, ach);
+                    t->get_played_games().insert(t->get_played_games().get_root(), te);
+                }
+                pat.insert(pat.getroot(), t);
+            }
+            else if(ch==2){
+                string id;
+                cout << "enter id:\n";
+                cin >> id;
+                pat.search_player(id, pat.getroot());
+            }
+            else if (ch == 3) {
+                string id;
+                cout << "enter id:\n";
+                cin >> id;
+                pat.display_dets(id, pat.getroot());
+            }
+        }
+        else if(ch==0) {
+            break;
+        }
+        else {
+            cout << "Enter 1 for insertion,2 for retrieval\n";
+            cin >> ch;
+            if (ch == 1) {
+                string id, name, dev, pub;
+                float size;
+                int down;
+                cout << "enter id:\n";
+                cin >> id;
+                cout << "enter name:\n";
+                cin >> name;
+                cout << "enter developer:\n";
+                cin >> dev;
+                cout << "enter publisher:\n";
+                cin >> pub;
+                cout << "Enter download size\n";
+                cin >> size;
+                cout << "Enter downloads\n";
+                cin >> down;
+                games* temp = new games(id, name, dev, pub, size, down);
+                ga.insert(ga.get_root(), temp);
+            }
+            else {
+                string id,ch;
+                cout << "enter id:\n";
+                cin >> id;
+                ga.search_games(ga.get_root(), id);
+                cout << "show path taken to find game?(y/n)";
+                cin >> ch;
+                if (ch == "y") {
+                    ga.pretorderTraversal(ga.get_root(), id);
+                }
+            }
+        }
+    }
+    //ga.postorderTraversal(ga.get_root());
    /* cout << "Enter player id\n";
     cin >> n;
     cout << "Enter game id\n";
